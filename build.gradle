@@ -1,0 +1,71 @@
+buildscript{
+    repositories {
+        mavenLocal()
+        jcenter()
+    }
+
+    dependencies{
+        classpath files('../gradle-dcompose-plugin/build/libs/gradle-dcompose-plugin.jar')
+    }
+}
+
+apply plugin: 'com.chrisgahlert.gradle-dcompose-plugin'
+
+/*
+plugins {
+    id 'com.chrisgahlert.gradle-dcompose-plugin' version '0.11.2'
+}
+*/
+
+ext {
+    TZ='Australia/Sydney'
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+}
+
+dcompose {
+    dockerClientConfig = { withDockerHost 'tcp://localhost:2375' }
+
+    elasticsearch {
+        image = 'docker.elastic.co/elasticsearch/elasticsearch:6.4.2'
+    }
+
+    fluentd {
+        baseDir = file 'fluentd'
+        env = ['TZ=$TZ']
+        portBindings = ['24224:24224']
+    }
+
+    kibana {
+        image = 'docker.elastic.co/kibana/kibana:6.4.2'
+    }
+
+    nginx {
+        baseDir = file 'nginx'
+        env = ['TZ=$TZ']
+        portBindings = ['80:80', '443:443']
+        logConfig = 'fluentd'
+    }
+
+    // generate log entries
+    generator {
+        baseDir = file 'generator'
+        env = ['TZ=$TZ']
+        logConfig = 'fluentd'
+    }
+
+    portainer {
+        image = 'portainer/portainer:1.19.2'
+        env = ['TZ=$TZ']
+        binds = ['portainer_data:/data',
+            '/var/run/docker.sock:/var/run/docker.sock']
+        preserveVolumes = true
+        //memLimit = 1000000000L
+        portBindings = ['9000:9000']
+    }
+}
+
+createComposeFile.useTags = true

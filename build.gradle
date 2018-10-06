@@ -27,34 +27,47 @@ repositories {
 }
 
 dcompose {
-    dockerClientConfig = { withDockerHost 'tcp://localhost:2375' }
+    //dockerClientConfig = { withDockerHost 'tcp://localhost:2375' }
 
+    // Need to set vm.max_map_count = 262144 on linux
     elasticsearch {
         image = 'docker.elastic.co/elasticsearch/elasticsearch:6.4.2'
+        env = ['TZ=$TZ',
+                //'ES_JAVA_OPTS=-Xms1g -Xmx1g',
+                'discovery.type=single-node']
+        //memLimit = 1000000000L
+        binds = ['esdata:/usr/share/elasticsearch/data']
+        preserveVolumes = true
     }
 
     fluentd {
         baseDir = file 'fluentd'
         env = ['TZ=$TZ']
+        dependsOn = [elasticsearch]
         portBindings = ['24224:24224']
     }
 
     kibana {
         image = 'docker.elastic.co/kibana/kibana:6.4.2'
+        env = ['TZ=$TZ']
     }
 
     nginx {
         baseDir = file 'nginx'
         env = ['TZ=$TZ']
         portBindings = ['80:80', '443:443']
+        dependsOn = [fluentd]
         logConfig = 'fluentd'
+        logOpts = ['tag': 'nginx']
     }
 
     // generate log entries
     generator {
         baseDir = file 'generator'
         env = ['TZ=$TZ']
+        dependsOn = [fluentd]
         logConfig = 'fluentd'
+        logOpts = [tag: 'generator']
     }
 
     portainer {
@@ -63,8 +76,10 @@ dcompose {
         binds = ['portainer_data:/data',
             '/var/run/docker.sock:/var/run/docker.sock']
         preserveVolumes = true
-        //memLimit = 1000000000L
         portBindings = ['9000:9000']
+        logConfig = 'json-file'
+        logOpts = ['max-size': '200k', 'max-file': '10']
+        restart = 'always'
     }
 }
 

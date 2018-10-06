@@ -18,6 +18,8 @@ Added `logConfig` support, see the generator entry in `build.gradle`
     generator {
         baseDir = file 'generator'
         env = ['TZ=$TZ']
+        dependsOn = [fluentd]
         logConfig = 'fluentd'
+        logOpts = [tag: 'generator']
     }
 ```

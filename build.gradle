@@ -1,21 +1,7 @@
-buildscript{
-    repositories {
-        mavenLocal()
-        jcenter()
-    }
-
-    dependencies{
-        classpath files('../gradle-dcompose-plugin/build/libs/gradle-dcompose-plugin.jar')
-    }
-}
-
-apply plugin: 'com.chrisgahlert.gradle-dcompose-plugin'
-
-/*
 plugins {
-    id 'com.chrisgahlert.gradle-dcompose-plugin' version '0.11.2'
+    // logging support added in 0.13.0
+    id 'com.chrisgahlert.gradle-dcompose-plugin' version '0.13.0'
 }
-*/
 
 ext {
     TZ='Australia/Sydney'
@@ -50,6 +36,7 @@ dcompose {
     kibana {
         image = 'docker.elastic.co/kibana/kibana:6.4.2'
         env = ['TZ=$TZ']
+        portBindings = ['5601:5601']
     }
 
     nginx {
